@@ -1,64 +1,89 @@
 // Here we define our query as a multi-line string
 // Storing it in a separate .graphql/.gql file is also possible
 let query = `
-query ($id: Int, $search: String) {
-  Media (id: $id, type: ANIME, search: $search) {
-	id
-	title {
-	  romaji
-	  english
-	  native
+query ($id: Int, $page: Int, $perPage: Int, $search: String) {
+	Page (page: $page, perPage: $perPage) {
+		pageInfo {
+			total
+			currentPage
+			lastPage
+			hasNextPage
+			perPage
+		}
+		media (id: $id, type: ANIME, search: $search) {
+			id
+			title {
+				romaji
+				english
+				native
+			}
+			coverImage {
+				extraLarge
+			}
+			startDate{
+				year
+				month
+				day
+			}
+			description
+			isAdult
+		}
 	}
-	coverImage {
-		extraLarge
-	}
-	startDate{
-		year
-		month
-		day
-	}
-	description
-  }
 }
 `;
 
 
 //random request
 async function makeRandomRequest() {
-	try {
+	let i = 0
+	let entries = prompt('Number of entries (Due limited entries request recommended max 6): ');
+	while (i < entries) {
+		try {
 
-		let html = '';
-		const response = await fetch('https://graphql.anilist.co', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Accept': 'application/json'
-			},
-			body: JSON.stringify({
-				query: query,
-				variables: { id: Math.floor(Math.random() * 148266) + 1 }
-			})
+			let html = '';
+			const response = await fetch('https://graphql.anilist.co', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({
+					query: query,
+					variables: {
+						id: Math.floor(Math.random() * 148266) + 1,
+						page: 1,
+						perPage: 10
+					}
+				})
 
-		});
+			});
 
-		if (response.status != 200) {
-			makeRandomRequest();
-		}
-		else {
-			let buttons = document.querySelector('.container');
-			buttons.style.display = 'none';
 			const data = await handleResponse(response);
-			handleData(data);
-			html += `<div class="card"><div class="wrapper"> ${htmlNewsegment(data.data.Media)}  </div></div>`;
-			let container = document.querySelector('.row')
-			container.innerHTML += html;
-			let e = document.querySelector(`.wrapper`);
-			e.style.background = `url(${data.data.Media.coverImage.extraLarge}) center/cover no-repeat`
+			if (response.status != 200 || data.data.Page.media.length == 0) {
+				console.log('Trying again')
+			}
+			else {
+				let buttons = document.querySelector('.container');
+				buttons.style.display = 'none';
+				handleData(data);
 
+				html = `<div class="card"><div class="wrapper${i}">`;
+				if (data.data.Page.media[0].isAdult) {
+					html += `<div class="adult">+18</div>${htmlNewsegment(data.data.Page.media[0])}  </div></div>`;
+				}
+				else {
+					html += `${htmlNewsegment(data.data.Page.media[0])}  </div></div>`;
+				}
+				let container = document.querySelector('.row')
+				container.innerHTML += html;
+				let e = document.querySelector(`.wrapper${i}`);
+				e.style.background = `url(${data.data.Page.media[0].coverImage.extraLarge}) center/cover no-repeat`
+				i++
+			}
+
+		} catch (err) {
+			console.log(err);
 		}
-
-	} catch (err) {
-		console.log(err);
 	}
 }
 
@@ -78,7 +103,11 @@ async function makeNameRequest() {
 			},
 			body: JSON.stringify({
 				query: query,
-				variables: {search: title}
+				variables: {
+					search: title,
+					page: 1,
+					perPage: 25
+				}
 			})
 
 		});
@@ -86,15 +115,29 @@ async function makeNameRequest() {
 			makeNameRequest();
 		}
 		else {
+			let i = 0;
 			let buttons = document.querySelector('.container');
 			buttons.style.display = 'none';
 			const data = await handleResponse(response);
 			handleData(data);
-			html += `<div class="card"><div class="wrapper"> ${htmlNewsegment(data.data.Media)}  </div></div>`;
-			let container = document.querySelector('.row')
-			container.innerHTML += html;
-			let e = document.querySelector(`.wrapper`);
-			e.style.background = `url(${data.data.Media.coverImage.extraLarge}) center/cover no-repeat`
+			console.log('00000000000000000000000000000000000000000000')
+			console.log(data.data.Page.media)
+			console.log('00000000000000000000000000000000000000000000')
+			data.data.Page.media.forEach(element => {
+				console.log(element.id)
+				html = `<div class="card"><div class="wrapper${i}">`;
+				if (element.isAdult) {
+					html += `<div class="adult">+18</div>${htmlNewsegment(element)}  </div></div>`;
+				}
+				else {
+					html += `${htmlNewsegment(element)}  </div></div>`;
+				}
+				let container = document.querySelector('.row')
+				container.innerHTML += html;
+				let e = document.querySelector(`.wrapper${i}`);
+				e.style.background = `url(${element.coverImage.extraLarge}) center/cover no-repeat`
+				i++;
+			});
 
 		}
 
@@ -102,11 +145,6 @@ async function makeNameRequest() {
 		console.log(err);
 	}
 }
-
-
-
-
-
 
 
 
@@ -168,6 +206,7 @@ function htmlNewsegment(data) {
 	<span class="month">${monthNumberToName(data.startDate.month)}</span>
 	<span class="year">${data.startDate.year}</span>
 </div>
+
 <div class="data">
 	<div class="content">
 		<h1 class="title"><a href="https://anilist.co/anime/${data.id}">${data.title.romaji}</a></h1>
