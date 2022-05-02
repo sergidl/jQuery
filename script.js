@@ -1,148 +1,8 @@
-// // async function makeRequest() {
-// // 	try {
-// // 		const response = await fetch(`https://api.themoviedb.org/3/movie/${generateRandom()}/external_ids?api_key=04c35731a5ee918f014970082a0088b1`, { mode: 'no-cors' });
-// // 		if (response.status === 404) {
-
-// // 			makeRequest();
-// // 		}
-// // 		else{
-// // 			const data = response.json();
-// // 			console.log(data);
-// // 			user = data;
-// // 			// render();
-// // 		}
-// // 		console.log('status code: ', response.status); // 👉️ 200
-
-// // 		if (!response.ok) {
-// // 			console.log(response);
-// // 			throw new Error(`Error! status: ${response.status}`);
-// // 		}
-
-// // 		const result = await response.json();
-// // 		return result;
-// // 	} catch (err) {
-// // 		console.log(err);
-// // 	}
-// // }
-
-
-
-
-//   async function makeRequest() {
-// 	try {
-// 	  const response = await fetch('https://www.themoviedb.org/movie/1',{mode:'no-cors'});
-
-// 	  console.log('response.status: ', response.status); // 👉️ 200
-// 	  console.log(response);
-
-// 	} catch (err) {
-// 	  console.log(err);
-// 	}
-//   }
-
-
-// async function cargarFile(filename) {
-// 	try {
-
-// 		const res = await fetch(filename);
-// 		return res.json()
-
-// 	} catch (error) {
-// 		console.log(error);
-// 	}
-
-// }
-
-// function htmlNewsegment(user) {
-// 	//template
-
-// 	return `<div class="user">
-// 	<img src="${user.profileURL}" >
-// 	<h2>${user.firstName} ${user.lastName}</h2>
-// 	<div class="email"><a href="email:${user.email}">${user.email}</a></div>
-// 	</div>`;
-
-// }
-
-// async function render() {
-
-// 	//.....
-// 	let html = '';
-
-
-
-// 	html += htmlNewsegment(user)
-
-
-// 	let container = document.querySelector('.container')
-// 	container.innerHTML = html;
-
-// }
-
-// makeRequest();
-// 	// cargarTexto("./demotext.json");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Here we define our query as a multi-line string
 // Storing it in a separate .graphql/.gql file is also possible
 let query = `
-query ($id: Int) {
-  Media (id: $id, type: ANIME) {
+query ($id: Int, $search: String) {
+  Media (id: $id, type: ANIME, search: $search) {
 	id
 	title {
 	  romaji
@@ -163,57 +23,85 @@ query ($id: Int) {
 `;
 
 
-
+//random request
 async function makeRandomRequest() {
-		try {
+	try {
 
-			let html = '';
-			const response = await fetch('https://graphql.anilist.co', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Accept': 'application/json'
-				},
-				body: JSON.stringify({
-					query: query,
-					variables: { id: Math.floor(Math.random() * 148266) + 1 }
-				})
+		let html = '';
+		const response = await fetch('https://graphql.anilist.co', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Accept': 'application/json'
+			},
+			body: JSON.stringify({
+				query: query,
+				variables: { id: Math.floor(Math.random() * 148266) + 1 }
+			})
 
-			});
-			console.log('+++++++++++++++++++++++++++++++++++++++++')
-			// console.log(response);
-			console.log('+++++++++++++++++++++++++++++++++++++++++')
-			if (response.status != 200) {
-				// await new Promise(resolve => setTimeout(resolve, 100));
-				makeRandomRequest();
-			}
-			else {
+		});
 
-				const data = await handleResponse(response);
-				handleData(data);
-				// console.log(data.data.Media.title.romaji)
-				html += `<div class="card"><div class="wrapper"> ${htmlNewsegment(data.data.Media)}  </div></div>`;
-				let container = document.querySelector('.row')
-				container.innerHTML += html;
-				// document.querySelectorAll('.example-1 .wrapper').forEach(el => {
-				// 	el.style.background = `url(${data.data.Media.coverImage.extraLarge}) center/cover no-repeat`
-				// })
-
-
-
-				let e = document.querySelector(`.wrapper`);
-				e.style.background = `url(${data.data.Media.coverImage.extraLarge}) center/cover no-repeat`
-
-			}
-			// await new Promise(resolve => setTimeout(resolve, 5000));
-
-		} catch (err) {
-			console.log(err);
+		if (response.status != 200) {
+			makeRandomRequest();
 		}
+		else {
+			let buttons = document.querySelector('.container');
+			buttons.style.display = 'none';
+			const data = await handleResponse(response);
+			handleData(data);
+			html += `<div class="card"><div class="wrapper"> ${htmlNewsegment(data.data.Media)}  </div></div>`;
+			let container = document.querySelector('.row')
+			container.innerHTML += html;
+			let e = document.querySelector(`.wrapper`);
+			e.style.background = `url(${data.data.Media.coverImage.extraLarge}) center/cover no-repeat`
+
+		}
+
+	} catch (err) {
+		console.log(err);
 	}
+}
 
 
 
+//id request
+async function makeNameRequest() {
+	let title = prompt('Title: ');
+	try {
+
+		let html = '';
+		const response = await fetch('https://graphql.anilist.co', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Accept': 'application/json'
+			},
+			body: JSON.stringify({
+				query: query,
+				variables: {search: title}
+			})
+
+		});
+		if (response.status != 200) {
+			makeNameRequest();
+		}
+		else {
+			let buttons = document.querySelector('.container');
+			buttons.style.display = 'none';
+			const data = await handleResponse(response);
+			handleData(data);
+			html += `<div class="card"><div class="wrapper"> ${htmlNewsegment(data.data.Media)}  </div></div>`;
+			let container = document.querySelector('.row')
+			container.innerHTML += html;
+			let e = document.querySelector(`.wrapper`);
+			e.style.background = `url(${data.data.Media.coverImage.extraLarge}) center/cover no-repeat`
+
+		}
+
+	} catch (err) {
+		console.log(err);
+	}
+}
 
 
 
@@ -289,5 +177,3 @@ function htmlNewsegment(data) {
 </div>`;
 
 }
-//make request when the page is loaded
-window.addEventListener('load', makeRandomRequest);
